@@ -1,0 +1,287 @@
+---
+title: "GPS Tracking"
+output: html_document
+date: "2025-03-19"
+---
+
+```{r}
+library(tidyverse)
+tracks = read_csv("/Users/arthurlennard/Downloads/RBNY Data Science Intern Test (Summer 2025)/intern_test_tracks.csv")
+```
+```{r}
+#Starting off with some basic cleaning so the data can be manipulated more easily 
+
+#filter data for just the player and the ball 
+
+tracks_player = tracks %>%
+  filter(player_id == 16937 | player_id == -1)
+
+#modifying data so instead of having 2 rows for each frame, there's just one row per frame and it has different variables for player_x/y and ball_x/y 
+
+tracks_clean = tracks_player %>%
+  mutate(type = if_else(player_id == 16937, "player", "ball")) %>%
+  mutate(ball_x = if_else(type == "ball", pos_x, NA)) %>%
+  mutate(ball_y = if_else(type == "ball", pos_y, NA)) %>% 
+  mutate(ball_z = if_else(type == "ball", pos_z, NA)) %>%
+  mutate(player_x = if_else(type == "player", pos_x, NA)) %>%
+  mutate(player_y = if_else(type == "player", pos_y, NA)) %>%
+  mutate(player_z = if_else(type == "player", pos_z, NA)) %>%
+  mutate(ball_speed_x = if_else(type == "ball", speed_x, NA)) %>%
+  mutate(ball_speed_y = if_else(type == "ball", speed_y, NA)) %>%
+  mutate(player_speed_x = if_else(type == "player", speed_x, NA)) %>%
+  mutate(player_speed_y = if_else(type == "player", speed_y, NA)) 
+
+numrows = nrow(tracks_clean)
+
+#these loops take a second to run 
+
+for (i in 1:(numrows-1)){
+  if (is.na(tracks_clean$player_x[i])){
+    tracks_clean$player_x[i] = tracks_clean$player_x[i+1]
+  }
+}
+
+for (i in 1:(numrows-1)){
+  if (is.na(tracks_clean$player_y[i])){
+    tracks_clean$player_y[i] = tracks_clean$player_y[i+1]
+  }
+}
+
+for (i in 1:(numrows-1)){
+  if (is.na(tracks_clean$player_speed_y[i])){
+    tracks_clean$player_speed_y[i] = tracks_clean$player_speed_y[i+1]
+  }
+}
+
+for (i in 1:(numrows-1)){
+  if (is.na(tracks_clean$player_speed_x[i])){
+    tracks_clean$player_speed_x[i] = tracks_clean$player_speed_x[i+1]
+  }
+}
+
+tracks_clean = tracks_clean %>%
+  select(-player_z)
+tracks_clean2 = na.omit(tracks_clean)
+tracks_clean2 = tracks_clean2 %>%
+  select(-player_id, -team_id, -goalkeeper, -type, -pos_x, -pos_y, -pos_z, -type)
+tracks_clean3 = tracks_clean2 %>%
+  select(-ball_speed_x, -ball_speed_y)
+tracks_clean3
+```
+```{r}
+#Now that I have a clean dataset to work with, I can begin to identify shots. The first step in this process is finding all the times that player 16937 is in possession of the ball (or at least very close to it for a frame if it's a first time shot)
+
+#this line filters the data to find every instance of the ball coming within sqrt(2) meters of the player, which should capture every touch he took 
+
+close = tracks_clean3 %>%
+  filter((abs(player_x - ball_x) <= 1) & (abs(player_y - ball_y) <= 1))
+
+#splitting by half 
+
+clean1 = close %>%
+  filter(period == 1)
+clean2 = close %>%
+  filter(period == 2)
+```
+
+```{r}
+#this is every touch the player took in the first half 
+
+ggplot(data = clean1) +
+  geom_point(aes(x = player_x, y = player_y))
+```
+
+```{r}
+#filtering the data to only contain touches that he took in the attacking 3rd 
+
+clean1third = clean1 %>%
+  filter(player_x >= 17)
+
+#The next step in finding shots is locating all the times in which the ball left the player's foot. In these lines of code, I found the difference in the frame number between consecutive rows (or touches). What this effectively shows is how long it took for the ball to return to the player after each touch. If the value is -1, then the player keeps the ball for consecutive frames. If there's a large value, that indicates the ball doesn't return to him for a while, but more importantly that it left his foot after that frame.  
+
+nrowsclean1 = nrow(clean1third)
+
+clean1ends = clean1third %>%
+  mutate(end = NA)
+
+for (i in 1:(nrowsclean1-1)){
+  clean1ends$end[i] = clean1ends$frame_count[i] - clean1ends$frame_count[i+1]
+}
+
+clean1ends1 = clean1ends %>%
+  filter(end != -1)
+clean1ends1
+
+#repeating for the second half
+
+clean2third = clean2 %>%
+  filter(player_x <= -17)
+
+nrowsclean2 = nrow(clean2third)
+
+clean2ends = clean2third %>%
+  mutate(end = NA)
+
+for (i in 1:(nrowsclean2-1)){
+  clean2ends$end[i] = clean2ends$frame_count[i] - clean2ends$frame_count[i+1]
+}
+
+clean2ends1 = clean2ends %>%
+  filter(end != -1)
+clean2ends1
+
+#now I should have every instnace of the ball leaving the player's foot in the attacking third
+```
+
+```{r}
+#The next thing I need to do is filter these instances of the ball leaving his foot for each time when the ball then moves closer to the goal in both the x and y directions after he kicks it 
+
+#df of each of the frame numbers from clean1ends1 and clean2ends2
+frames1 = clean1ends1 %>%
+  select(frame_count)
+frames2 = clean2ends1 %>%
+  select(frame_count)
+
+#get the current and the next 2 xs and ys of the ball
+frames1 = frames1 %>%
+  mutate(next1 = frame_count + 1) %>%
+  mutate(next2 = next1 + 1)
+frames2 = frames2 %>%
+  mutate(next1 = frame_count + 1) %>%
+  mutate(next2 = next1 + 1)
+frames_1a = data.frame(frame_count = c(frames1$frame_count, frames1$next1, frames1$next2))
+frames_2a = data.frame(frame_count = c(frames2$frame_count, frames2$next1, frames2$next2))
+
+test1 = inner_join(tracks_clean3, frames_1a, by = "frame_count")
+test2 = inner_join(tracks_clean3, frames_2a, by = "frame_count")
+
+#filter for where they both point toward the goal
+#+/- 3.66 y is the goal
+#and -52 for x for first half, 52 for second half 
+test1 = test1 %>%
+  mutate(group = rep(1:(n()/3), each = 3))
+test1_grouped = test1 %>%
+  group_by(group) %>%
+  filter(first(ball_x) < last(ball_x) & abs(first(ball_y)) > abs(last(ball_y))) %>%
+  ungroup()
+test2 = test2 %>%
+  mutate(group = rep(1:(n()/3), each = 3))
+test2_grouped = test2 %>%
+  group_by(group) %>%
+  filter(first(ball_x) > last(ball_x) & abs(first(ball_y)) > abs(last(ball_y))) %>%
+  ungroup()
+
+#Assuming that all shots will meet the criteria I've specified to this point (ball getting closer to goal, starting in attacking 3rd, etc.), now we have 5 potential shots from the first half and 13 from the second half 
+```
+```{r}
+#first half options
+#11791, 11828, 55702, 67945, 82512
+#second half options
+#101140, 102422, 103801, 107762, 113681, 115312, 125832, 125856, 135473, 135511, 136072, 139238, 155020
+
+#let's visualize each of these situations, with the player in black and the ball in green 
+#(I only ended up keeping the plots that looked the most like shots) 
+
+a1 = tracks_clean3 %>%
+  filter(frame_count >= 11791) %>%
+  filter(frame_count <= 11827)
+
+ggplot(data = a1) +
+  geom_point(aes(x = player_x, y = player_y)) + 
+  geom_point(aes(x = ball_x, y = ball_y), color = "green") + 
+  coord_cartesian(xlim = c(-52, 52), ylim = c(-34, 34))
+
+a2 = tracks_clean3 %>%
+  filter(frame_count >= 11828) %>%
+  filter(frame_count <= 11835)
+
+ggplot(data = a2) +
+  geom_point(aes(x = player_x, y = player_y)) + 
+  geom_point(aes(x = ball_x, y = ball_y), color = "green") + 
+  coord_cartesian(xlim = c(-52, 52), ylim = c(-34, 34))
+
+#these appear to be related instances, with the first one being an intial shot and the second being another shot from the rebound after the first was saved by the gk. Additionally, a little inspection found that the next player to obtain possession of the ball after the second shot was the other team's gk, suggesting that the second one was held onto. 
+```
+```{r}
+#55702; just a pass 
+
+#67945; overhit through ball that went out of play 
+
+#82512; pass out wide 
+```
+```{r}
+#second half options
+#101140, 102422, 103801, 107762, 113681, 115312, 125832, 125856, 135473, 135511, 136072, 139238, 155020
+
+#101140; sideways pass 
+
+a7 = tracks_clean3 %>%
+  filter(frame_count >= 102422) %>%
+  filter(frame_count <= 102450)
+
+ggplot(data = a7) +
+  geom_point(aes(x = player_x, y = player_y)) + 
+  geom_point(aes(x = ball_x, y = ball_y), color = "green") + 
+  coord_cartesian(xlim = c(-52, 52), ylim = c(-34, 34))
+#goes go toward the goal but unlikely to be a shot because you'd expect the ball to leave the ground when shooting from that distance 
+
+#103801; cross
+
+a8 = tracks_clean3 %>%
+  filter(frame_count >= 107762) %>%
+  filter(frame_count <= 107800)
+
+ggplot(data = a8) +
+  geom_point(aes(x = player_x, y = player_y)) + 
+  geom_point(aes(x = ball_x, y = ball_y), color = "green") + 
+  coord_cartesian(xlim = c(-52, 52), ylim = c(-34, 34))
+#looks like a blocked shot considering it immediately shoots off sideways at a sharp angle 
+
+#113681; looks like an intercepted pass 
+
+a9 = tracks_clean3 %>%
+  filter(frame_count >= 115200) %>%
+  filter(frame_count <= 115800)
+
+ggplot(data = a9) +
+  geom_point(aes(x = player_x, y = player_y)) + 
+  geom_point(aes(x = ball_x, y = ball_y), color = "green") + 
+  coord_cartesian(xlim = c(-52, 52), ylim = c(-34, 34))
+#115312; looks like a shot from close range and a goal as the ball goes straight back to midfield immediately after 
+#also looks like it came from a corner 
+
+#125832, 125856; looks like a cross that was cleared 
+
+a11 = tracks_clean3 %>%
+  filter(frame_count >= 135473) %>%
+  filter(frame_count <= 135600)
+
+ggplot(data = a11) +
+  geom_point(aes(x = player_x, y = player_y)) + 
+  geom_point(aes(x = ball_x, y = ball_y), color = "green") + 
+  coord_cartesian(xlim = c(-52, 52), ylim = c(-34, 34))
+#drive into the box with a shot that was saved before getting it back but not getting a real shot off the second time 
+
+#136072; ball played out wide 
+
+#139238; ball played into the box from a wide position 
+
+#155020; passing around outside the box in a wide position 
+```
+
+```{r}
+#These are all the frames that look like shots when plotted on the graphs, with their outcomes next to them 
+
+frame_count = c(11791, 11828, 107762, 115312, 135473)
+outcome = c("Saved, Rebound", "Saved, Held", "Blocked", "Goal", "Saved, Rebound")
+
+final = as.data.frame(frame_count)
+final = final %>%
+  cbind(outcome)
+
+final
+```
+```{r}
+#Thank You!
+```
+
