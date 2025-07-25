@@ -6,7 +6,7 @@ date: "2025-03-19"
 
 ```{r}
 library(tidyverse)
-tracks = read_csv("/Users/arthurlennard/Downloads/Data Science Intern Test (Summer 2025)/intern_test_tracks.csv")
+tracks = read_csv("/Users/arthurlennard/Downloads/RBNY Data Science Intern Test (Summer 2025)/intern_test_tracks.csv")
 ```
 ```{r}
 #Starting off with some basic cleaning so the data can be manipulated more easily 
@@ -209,6 +209,7 @@ ggplot(data = a2) +
 
 #82512; pass out wide 
 ```
+
 ```{r}
 #second half options
 #101140, 102422, 103801, 107762, 113681, 115312, 125832, 125856, 135473, 135511, 136072, 139238, 155020
@@ -240,15 +241,17 @@ ggplot(data = a8) +
 #113681; looks like an intercepted pass 
 
 a9 = tracks_clean3 %>%
-  filter(frame_count >= 115200) %>%
+  filter(frame_count >= 115500) %>%
   filter(frame_count <= 115800)
 
 ggplot(data = a9) +
   geom_point(aes(x = player_x, y = player_y)) + 
   geom_point(aes(x = ball_x, y = ball_y), color = "green") + 
-  coord_cartesian(xlim = c(-52, 52), ylim = c(-34, 34))
+  coord_cartesian(xlim = c(-52, 52), ylim = c(-34, 34))  
+
 #115312; looks like a shot from close range and a goal as the ball goes straight back to midfield immediately after 
 #also looks like it came from a corner 
+#115340, 115500, 115800
 
 #125832, 125856; looks like a cross that was cleared 
 
@@ -267,6 +270,71 @@ ggplot(data = a11) +
 #139238; ball played into the box from a wide position 
 
 #155020; passing around outside the box in a wide position 
+```
+
+
+```{r}
+#Taking a closer look at the goal 
+
+a9 = tracks_clean3 %>%
+  filter(frame_count >= 115500) %>%
+  filter(frame_count <= 115800)
+
+# Function to draw a circle (used for center circle and arcs)
+circle_points <- function(center = c(0,0), radius = 1, npoints = 100, start = 0, end = 2*pi) {
+  theta <- seq(start, end, length.out = npoints)
+  data.frame(
+    x = center[1] + radius * cos(theta),
+    y = center[2] + radius * sin(theta)
+  )
+}
+
+# Field dimensions
+pitch_length <- 104  # x: -52 to 52
+pitch_width <- 68    # y: -34 to 34
+
+# Elements to draw
+center_circle <- circle_points(c(0, 0), 9.15)
+penalty_arc_left <- circle_points(c(-42.5, 0), 9.15, start = pi/4, end = -pi/4)
+penalty_arc_right <- circle_points(c(42.5, 0), 9.15, start = 3*pi/4, end = 5*pi/4)
+
+ggplot() +
+  # Field base
+  geom_rect(aes(xmin = -52, xmax = 52, ymin = -34, ymax = 34), fill = "palegreen4", color = "white") +
+
+  # Outer boundaries
+  geom_rect(aes(xmin = -52, xmax = 52, ymin = -34, ymax = 34), fill = NA, color = "white", linewidth = 1) +
+
+  # Center line
+  geom_segment(aes(x = 0, xend = 0, y = -34, yend = 34), color = "white", linewidth = 1) +
+
+  # Center circle
+  geom_path(data = center_circle, aes(x, y), color = "white") +
+
+  # Penalty areas
+  geom_rect(aes(xmin = -52, xmax = -36, ymin = -16.5, ymax = 16.5), color = "white", fill = NA) +  # Left
+  geom_rect(aes(xmin = 36, xmax = 52, ymin = -16.5, ymax = 16.5), color = "white", fill = NA) +   # Right
+
+  # Goal areas
+  geom_rect(aes(xmin = -52, xmax = -47, ymin = -5.5, ymax = 5.5), color = "white", fill = NA) +
+  geom_rect(aes(xmin = 47, xmax = 52, ymin = -5.5, ymax = 5.5), color = "white", fill = NA) +
+
+  # Penalty spots
+  geom_point(aes(x = -42.5, y = 0), color = "white", size = 1.5) +
+  geom_point(aes(x = 42.5, y = 0), color = "white", size = 1.5) +
+
+  # Arcs at top of penalty areas
+  geom_path(data = penalty_arc_left, aes(x, y), color = "white") +
+  geom_path(data = penalty_arc_right, aes(x, y), color = "white") +
+
+  # Your tracking data
+  geom_point(data = a9, aes(x = player_x, y = player_y)) + 
+  geom_point(data = a9, aes(x = ball_x, y = ball_y), color = "green") + 
+  coord_cartesian(xlim = c(-52, 52), ylim = c(-34, 34)) + 
+
+  coord_fixed() +
+  theme_void() +
+  theme(legend.position = "none")
 ```
 
 ```{r}
