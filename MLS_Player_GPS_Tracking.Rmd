@@ -6,7 +6,7 @@ date: "2025-03-19"
 
 ```{r}
 library(tidyverse)
-tracks = read_csv("/Users/arthurlennard/Downloads/RBNY Data Science Intern Test (Summer 2025)/intern_test_tracks.csv")
+tracks = read_csv("/Users/arthurlennard/Downloads/Data Science Intern Test (Summer 2025)/intern_test_tracks.csv")
 ```
 ```{r}
 #Starting off with some basic cleaning so the data can be manipulated more easily 
