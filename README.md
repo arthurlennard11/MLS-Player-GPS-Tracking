@@ -47,7 +47,7 @@ With sufficiently frequent positional data from both the player and the ball, it
 
 &nbsp;
 
-![Shot Sequence Example](Visual_of_Goal/CornerTaken.png)
+![Shot Sequence Example](Visual%20of%20Goal/CornerTaken.png)
 
 &nbsp;
 
