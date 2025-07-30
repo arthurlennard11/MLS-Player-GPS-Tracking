@@ -1,4 +1,4 @@
-# 🎯 Identifying Shots from MLS Tracking Data
+# Identifying Shots from MLS Tracking Data
 
 ---
 
@@ -47,11 +47,11 @@ With sufficiently frequent positional data from both the player and the ball, it
 
 &nbsp;
 
-![Shot Sequence Example](Visual_of_Goal/1.CornerTaken.png)
+ <img src="Visual_of_Goal/1.CornerTaken.png" alt="Corner" width="50%">
 &nbsp;
-![Shot Sequence Example](Visual_of_Goal/2.GoalAndCelly.png)
+ <img src="Visual_of_Goal/2.GoalAndCelly.png" alt="Goal" width="50%">
 &nbsp;
-![Shot Sequence Example](Visual_of_Goal/3.BackToMidfield.png)
+ <img src="Visual_of_Goal/3.BackToMidfield.png" alt="Restart" width="50%">
 
 &nbsp;
 
