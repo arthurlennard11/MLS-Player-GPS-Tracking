@@ -49,9 +49,15 @@ With sufficiently frequent positional data from both the player and the ball, it
 
  <img src="Visual_of_Goal/1.CornerTaken.png" alt="Corner" width="50%">
 &nbsp;
+- The ball comes in from the corner 
+&nbsp;
  <img src="Visual_of_Goal/2.GoalAndCelly.png" alt="Goal" width="50%">
 &nbsp;
+- The player scores and then runs to the corner to celebrate 
+&nbsp;
  <img src="Visual_of_Goal/3.BackToMidfield.png" alt="Restart" width="50%">
+ &nbsp;
+ - The other team takes the ball back to midfield 
 
 &nbsp;
 
