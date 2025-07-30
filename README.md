@@ -47,7 +47,7 @@ With sufficiently frequent positional data from both the player and the ball, it
 
 &nbsp;
 
-![Shot Sequence Example](Visuals/Shot1.png)
+![Shot Sequence Example](Visual_of_Goal/CornerTaken.png)
 
 &nbsp;
 
@@ -56,8 +56,9 @@ With sufficiently frequent positional data from both the player and the ball, it
 ## ✅ Outcome
 
 - Identified **4** shot events for the player:
-  - **3** saved by the goalkeeper
+  - **2** saved by the goalkeeper
   - **1** blocked by a defender
+  - **1** goal scored from a corner 
 - Confirmed that player/ball proximity and directional tracking data can be used effectively to reconstruct shot attempts in the absence of event data.
 
 ---
