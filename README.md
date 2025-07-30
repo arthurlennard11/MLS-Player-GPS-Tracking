@@ -1,3 +1,69 @@
-## MLS-Player-GPS-Tracking
+# 🎯 Identifying Shots from MLS Tracking Data
 
-### This project, also in R, tasked me with finding out how many shots a certain player took during an MLS match, given only the GPS tracking data for all 22 players on the pitch and the ball. The data was split into rows for each “frame”, which is just an instance of recording all the positions. This happened every 0.04 seconds throughout the match. To accomplish my task, first I modified the data to make each row of the table I was given display the ball’s position at a certain time and the chosen player’s position at that same time. I then sorted the data by half to account for the player attacking a different goal in the 2nd half. After that, I found every instance in which the ball was within 1 yard of the player in both the X and Y directions concurrently, to find what I thought was every time that player was in possession of the ball. Next I filtered it down to all the instances in which the ball was within this radius in one frame, and out of it the next frame, to find each time the player passed/shot/etc the ball. I then found each instance within these cases in which, after leaving the player’s foot, the ball moved closer to the goal. At this point, I had narrowed down my search to 14 different cases, so I plotted each of the remaining sequences, and then examined them to determine which ones saw the ball directed at the goal. I was ultimately able to find 4 instances of what I thought were shots, with 3 of them being saved by the goalkeeper, and one of them being blocked by a defender.
+---
+
+## 🎯 Goal
+
+Determine how many shots a specific player took during an MLS match using only GPS tracking data—without access to traditional event data.
+
+---
+
+## 💡 Hypothesis
+
+With sufficiently frequent positional data from both the player and the ball, it's possible to algorithmically infer shot events by analyzing patterns of proximity and directional movement toward goal.
+
+---
+
+## 📊 Data
+
+- **Source:** High-frequency GPS tracking data (25Hz; one frame every 0.04 seconds) for all 22 players and the ball.
+- **Structure:** Each row represents a single frame with X and Y coordinates for each object.
+- **Challenge:** No explicit event tags (e.g., shots or passes); all shot attempts must be inferred from position data alone.
+
+---
+
+## 🧠 Methods
+
+1. **Data Structuring**
+   - Reformatted raw tracking data to isolate the coordinates of the player and ball for every frame.
+   - Divided data by match half to account for goal direction changes.
+
+2. **Possession Detection**
+   - Identified all frames where the ball was within 1 yard (in both X and Y directions) of the player’s position to estimate ball possession.
+
+3. **Ball Release Events**
+   - Filtered to moments where the ball exited the 1-yard proximity between one frame and the next—interpreted as a pass, shot, or other ball action.
+
+4. **Toward-Goal Filtering**
+   - From those release events, selected instances where the ball subsequently moved closer to the goal.
+
+5. **Manual Review**
+   - Narrowed down to 14 potential shot events.
+   - Visualized each sequence and manually reviewed plots to determine whether they represented a shot.
+
+---
+
+## 🖼️ Example Shot Sequence Plot
+
+&nbsp;
+
+![Shot Sequence Example](Visuals/Shot1.png)
+
+&nbsp;
+
+---
+
+## ✅ Outcome
+
+- Identified **4** shot events for the player:
+  - **3** saved by the goalkeeper
+  - **1** blocked by a defender
+- Confirmed that player/ball proximity and directional tracking data can be used effectively to reconstruct shot attempts in the absence of event data.
+
+---
+
+## 🛠️ Tools
+
+- **R** (`tidyverse`, `ggplot2`)
+
+---
