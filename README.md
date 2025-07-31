@@ -4,7 +4,7 @@
 
 ## 🎯 Goal
 
-Determine how many shots a specific player took during an MLS match using only GPS tracking data—without access to traditional event data.
+Determine how many shots a specific player took during an MLS match using only GPS tracking data without access to traditional event data.
 
 ---
 
